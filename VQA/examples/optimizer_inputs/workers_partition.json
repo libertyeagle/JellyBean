@@ -1,0 +1,4 @@
+[
+    ["workflow-compute-cpu-1", "workflow-compute-cpu-2", "workflow-compute-cpu-3", "workflow-compute-cpu-4", "workflow-compute-cpu-5"],
+    ["workflow-compute-cpu-6", "workflow-compute-gpu-1", "workflow-compute-gpu-2", "workflow-compute-gpu-3"]
+]

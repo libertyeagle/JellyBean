@@ -1,0 +1,51 @@
+{
+    "request_rate": 40.0,
+    "dataset_path": "/data/VQA_Workflow_Datasets",
+    "logging_dir": "~/VQAWorkflowLogging",
+    "pipeline_specs": {
+        "pipeline_0": {
+            "worker_addrs": ["10.241.64.17:5000"],
+            "relay_addrs": ["10.241.64.17:7000"],
+            "model_assignments": {},
+            "device_placements": {}
+        },
+        "pipeline_1": {
+            "worker_addrs": ["10.241.64.17:5100"],
+            "relay_addrs": ["10.241.64.17:7100"],
+            "model_assignments": {},
+            "device_placements": {}
+        },
+        "pipeline_2": {
+            "worker_addrs": ["10.241.64.12:5200", "10.241.64.4:5201"],
+            "relay_addrs": ["10.241.64.12:7200", "10.241.64.4:7201"],
+            "relay_weights": [3.33720376, 37.18199495],
+            "model_assignments": {
+                "SpeechRecognition": "wav2vec2-large-960h-lv60-self"
+            },
+            "device_placements": {
+                "SpeechRecognition": ["cpu", "cuda:0"]
+            }
+        },
+        "pipeline_3": {
+            "worker_addrs": ["10.241.64.9:5300", "10.241.64.16:5301", "10.241.64.13:5302"],
+            "relay_addrs": ["10.241.64.9:7300", "10.241.64.16:7301", "10.241.64.13:7302"],
+            "relay_weights": [7.4027815, 9.97052298, 27.25175878],
+            "model_assignments": {
+                "ImageFeatureExtract": "resnet18"
+            },
+            "device_placements": {
+                "ImageFeatureExtract": ["cpu", "cpu", "cpu"]
+            }
+        },
+        "pipeline_4": {
+            "worker_addrs": ["10.241.64.22:5400"],
+            "relay_addrs": ["10.241.64.22:7400"],
+            "model_assignments": {
+                "VQAInference": "resnet18"
+            },
+            "device_placements": {
+                "VQAInference": ["cpu"]
+            }
+        }
+    }
+}

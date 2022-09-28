@@ -1,0 +1,152 @@
+// READ, Sep 15 2021
+//! Conversion to the `Stream` type from iterators.
+
+use std::pin::Pin;
+use std::sync::Arc;
+use std::task::{Context, Poll};
+
+use crate::dataflow::channels::Message;
+use crate::dataflow::operators::generic::operator::source;
+use crate::dataflow::operators::CapabilitySet;
+use crate::dataflow::{Scope, Stream};
+use crate::progress::Timestamp;
+use crate::Data;
+
+/// Converts to a timely `Stream`.
+pub trait ToStream<T: Timestamp, D: Data> {
+    /// Converts to a timely `Stream`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use timely::dataflow::operators::{ToStream, Capture};
+    /// use timely::dataflow::operators::capture::Extract;
+    ///
+    /// let (data1, data2) = timely::example(|scope| {
+    ///     let data1 = (0..3).to_stream(scope).capture();
+    ///     let data2 = vec![0,1,2].to_stream(scope).capture();
+    ///     (data1, data2)
+    /// });
+    ///
+    /// assert_eq!(data1.extract(), data2.extract());
+    /// ```
+    fn to_stream<S: Scope<Timestamp=T>>(self, scope: &mut S) -> Stream<S, D>;
+}
+
+impl<T: Timestamp, I: IntoIterator+'static> ToStream<T, I::Item> for I where I::Item: Data {
+    // NOTE THE USAGE OF Scope<Timestamp=T> HERE
+    fn to_stream<S: Scope<Timestamp=T>>(self, scope: &mut S) -> Stream<S, I::Item> {
+
+        source(scope, "ToStream", |capability, info| {
+
+            // Acquire an activator, so that the operator can rescheduled itself.
+            let activator = scope.activator_for(&info.address[..]);
+
+            // fuse() creates an iterator which ends after the first [`None`].
+            let mut iterator = self.into_iter().fuse();
+            let mut capability = Some(capability);
+
+            move |output| {
+
+                if let Some(element) = iterator.next() {
+                    let mut session = output.session(capability.as_ref().unwrap());
+                    session.give(element);
+                    for element in iterator.by_ref().take((256 * Message::<T, I::Item>::default_length()) - 1) {
+                        session.give(element);
+                    }
+                    // there may still be outstanding inputs
+                    activator.activate();
+                }
+                else {
+                    capability = None;
+                }
+            }
+        })
+    }
+}
+
+/// Data and progress events of the native stream.
+pub enum Event<F: IntoIterator, D> {
+    /// Indicates that timestamps have advanced to frontier F
+    Progress(F),
+    /// Indicates that event D happened at time T
+    Message(F::Item, D),
+}
+
+/// Converts to a timely `Stream`.
+pub trait ToStreamAsync<T: Timestamp, D: Data> {
+    /// Converts a [native `Stream`](futures_util::stream::Stream) of [`Event`s](Event) into a [timely
+    /// `Stream`](crate::dataflow::Stream).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use futures_util::stream;
+    ///
+    /// use timely::dataflow::operators::{Capture, Event, ToStream, ToStreamAsync};
+    /// use timely::dataflow::operators::capture::Extract;
+    ///
+    /// let native_stream = stream::iter(vec![
+    ///     Event::Message(0, 0),
+    ///     Event::Message(0, 1),
+    ///     Event::Message(0, 2),
+    ///     Event::Progress(Some(0)),
+    /// ]);
+    ///
+    /// let native_stream = Box::pin(native_stream);
+    ///
+    /// let (data1, data2) = timely::example(|scope| {
+    ///     let data1 = native_stream.to_stream(scope).capture();
+    ///     let data2 = vec![0,1,2].to_stream(scope).capture();
+    ///
+    ///     (data1, data2)
+    /// });
+    ///
+    /// assert_eq!(data1.extract(), data2.extract());
+    /// ```
+    fn to_stream<S: Scope<Timestamp = T>>(self: Pin<Box<Self>>, scope: &S) -> Stream<S, D>;
+}
+
+impl<T, D, F, I> ToStreamAsync<T, D> for I
+where
+    D: Data,
+    T: Timestamp,
+    F: IntoIterator<Item = T>,
+    I: futures_util::stream::Stream<Item = Event<F, D>> + ?Sized + 'static,
+{
+    fn to_stream<S: Scope<Timestamp = T>>(mut self: Pin<Box<Self>>, scope: &S) -> Stream<S, D> {
+        source(scope, "ToStreamAsync", move |capability, info| {
+            // use Arc to wrap a SyncActivator
+            // Arc<SyncActivator> can be transferred to another thread and activate a designated path of the current worker
+            // SyncActivator implements ArcWake
+            let activator = Arc::new(scope.sync_activator_for(&info.address[..]));
+
+            let mut cap_set = CapabilitySet::from_elem(capability);
+
+            move |output| {
+                // waker is a WakerRef
+                let waker = futures_util::task::waker_ref(&activator);
+                let mut context = Context::from_waker(&waker);
+
+                // Consume all the ready items of the source_stream and issue them to the operator
+                // if the stream is not ready, Poll::Pending will return
+                // and the waker in the context will be called to wake up something in the current pulling thread
+                // here the activator will be waken to re-activate (reschedule at some later point) the current to_stream operator
+                while let Poll::Ready(item) = self.as_mut().poll_next(&mut context) {
+                    match item {
+                        Some(Event::Progress(time)) => {
+                            cap_set.downgrade(time);
+                        }
+                        Some(Event::Message(time, data)) => {
+                            output.session(&cap_set.delayed(&time)).give(data);
+                        }
+                        None => {
+                            cap_set.downgrade(&[]);
+                            break;
+                        }
+                    }
+                }
+            }
+        })
+    }
+}

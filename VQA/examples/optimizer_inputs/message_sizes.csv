@@ -1,0 +1,8 @@
+ReadImage,ExtractImageFeature,default,default,794.0348300933838
+ReadSpeech,SpeechRecognition,default,default,97.07174682617188
+ExtractImageFeature,VQA,resnet18,default,2.00390625
+ExtractImageFeature,VQA,resnet34,default,2.00390625
+ExtractImageFeature,VQA,resnet50,default,8.00390625
+ExtractImageFeature,VQA,resnet101,default,8.00390625
+ExtractImageFeature,VQA,resnet152,default,8.00390625
+SpeechRecognition,VQA,default,default,0.10

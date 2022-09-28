@@ -1,0 +1,21 @@
+[package]
+name = "abomonation_derive"
+version = "0.5.0"
+authors = ["Nika Layzell <nika@thelayzells.com>"]
+description = "A custom derive plugin for abomonation"
+license = "MIT"
+repository = "https://github.com/mystor/abomonation_derive"
+documentation = "https://docs.rs/abomonation_derive"
+edition = "2018"
+
+[lib]
+name = "abomonation_derive"
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+synstructure = "0.12"
+
+[dev-dependencies]
+abomonation = { path = "../abomonation", version = "0.7.3" }

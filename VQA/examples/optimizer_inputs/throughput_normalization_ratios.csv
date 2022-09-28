@@ -1,0 +1,4 @@
+ReadImage,ExtractImageFeature,1.0
+ReadSpeech,SpeechRecognition,1.0
+ExtractImageFeature,VQA,1.0
+SpeechRecognition,VQA,1.0

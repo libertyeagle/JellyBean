@@ -1,0 +1,8 @@
+ReadImage,workflow-compute-cpu-6,1.0
+ReadImage,workflow-compute-gpu-1,1.0
+ReadImage,workflow-compute-gpu-2,1.0
+ReadImage,workflow-compute-gpu-3,1.0
+ReadSpeech,workflow-compute-cpu-6,1.0
+ReadSpeech,workflow-compute-gpu-1,1.0
+ReadSpeech,workflow-compute-gpu-2,1.0
+ReadSpeech,workflow-compute-gpu-3,1.0

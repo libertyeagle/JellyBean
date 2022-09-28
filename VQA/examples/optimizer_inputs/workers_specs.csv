@@ -1,0 +1,9 @@
+workflow-compute-cpu-1,0.096
+workflow-compute-cpu-2,0.192
+workflow-compute-cpu-3,0.384
+workflow-compute-cpu-4,0.384
+workflow-compute-cpu-5,0.768
+workflow-compute-cpu-6,2.305
+workflow-compute-gpu-1,2.497
+workflow-compute-gpu-2,2.497
+workflow-compute-gpu-3,2.497

@@ -1,0 +1,38 @@
+[package]
+name = "pipeline_examples"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+timely = { path = "../timely", version = "0.12" }
+structopt = "0.3.25"
+
+[[bin]]
+name = "two_stages_worker"
+path = "src/simple_two_stages/worker.rs"
+
+[[bin]]
+name = "two_stages_relay"
+path = "src/simple_two_stages/relay.rs"
+
+
+[[bin]]
+name = "four_stages_worker"
+path = "src/four_stages_branch_join/worker.rs"
+
+[[bin]]
+name = "four_stages_relay"
+path = "src/four_stages_branch_join/relay.rs"
+
+
+[[bin]]
+name = "same_input_test_relay"
+path = "src/same_input_from_two_pipelines/relay.rs"
+
+[[bin]]
+name = "same_input_test_worker"
+path = "src/same_input_from_two_pipelines/worker.rs"
+
+
